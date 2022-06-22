@@ -1,33 +1,51 @@
 package render
 
 import (
+	"bytes"
 	"fmt"
+	"log"
 	"net/http"
 	"path/filepath"
 	"text/template"
+
+	"github.com/GodKimba/super-duper-golang-web-app/pkg/config"
 )
 
 var functions = template.FuncMap{}
 
-func RenderTemplate(w http.ResponseWriter, tmpl string) {
+var app *config.AppConfig
 
-	_, err := RenderTemplateTest(w)
-	if err != nil {
-		fmt.Println("error getting template cache:", err)
+// NewTemplates sets the config for the template cache
+func NewTemplates(a *config.AppConfig) {
+	app = a
+}
+
+// RenderTemplate render templates using html templates
+func RenderTemplate(w http.ResponseWriter, tmpl string) {
+	// get the template cache from the app config
+
+	tc := app.TemplateCache
+
+	// Saving template into t
+	t, ok := tc[tmpl]
+	if !ok {
+		log.Fatal("could not get template from template cache")
 	}
 
-	parsedTemplate, _ := template.ParseFiles("./templates/" + tmpl)
+	// Buffer that will ParseFiles(templates)
+	buf := new(bytes.Buffer)
 
-	err = parsedTemplate.Execute(w, nil)
+	_ = t.Execute(buf, nil)
+
+	_, err := buf.WriteTo(w)
 	if err != nil {
-		fmt.Println("error parsing template:", err)
-		return
+		fmt.Println("error writeing template to browser", err)
 	}
 }
 
-func RenderTemplateTest(w http.ResponseWriter) (map[string]*template.Template, error) {
+// CreateTemplateCache creates a template cache as a map
+func CreateTemplateCache() (map[string]*template.Template, error) {
 
-	// Saving
 	myCache := map[string]*template.Template{}
 
 	pages, err := filepath.Glob("./templates/*.page.html")
@@ -37,7 +55,6 @@ func RenderTemplateTest(w http.ResponseWriter) (map[string]*template.Template, e
 
 	for _, page := range pages {
 		name := filepath.Base(page)
-		fmt.Println("Page is currently", page)
 
 		ts, err := template.New(name).Funcs(functions).ParseFiles(page)
 		if err != nil {
@@ -50,7 +67,7 @@ func RenderTemplateTest(w http.ResponseWriter) (map[string]*template.Template, e
 		}
 
 		if len(matches) > 0 {
-			ts, err = ts.ParseGlob("./template/*.layout.html")
+			ts, err = ts.ParseGlob("./templates/*.layout.html")
 			if err != nil {
 				return myCache, err
 			}
