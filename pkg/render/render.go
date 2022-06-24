@@ -9,6 +9,7 @@ import (
 	"text/template"
 
 	"github.com/GodKimba/super-duper-golang-web-app/pkg/config"
+	"github.com/GodKimba/super-duper-golang-web-app/pkg/models"
 )
 
 var functions = template.FuncMap{}
@@ -21,7 +22,7 @@ func NewTemplates(a *config.AppConfig) {
 }
 
 // RenderTemplate render templates using html templates
-func RenderTemplate(w http.ResponseWriter, tmpl string) {
+func RenderTemplate(w http.ResponseWriter, tmpl string, td *models.TemplateData) {
 	var tc map[string]*template.Template
 
 	if app.UseCache {
@@ -41,7 +42,7 @@ func RenderTemplate(w http.ResponseWriter, tmpl string) {
 	// Buffer that will ParseFiles(templates)
 	buf := new(bytes.Buffer)
 
-	_ = t.Execute(buf, nil)
+	_ = t.Execute(buf, td)
 
 	_, err := buf.WriteTo(w)
 	if err != nil {
