@@ -14,6 +14,7 @@ func WriteToConsole(next http.Handler) http.Handler {
 	})
 }
 
+// NoSurf adds CSRF to ALL POST requests
 func NoSurf(next http.Handler) http.Handler {
 	csrfHandler := nosurf.New(next)
 
@@ -22,8 +23,13 @@ func NoSurf(next http.Handler) http.Handler {
 		// This is how to set cookie path to all website
 		Path: "/",
 		// Change here when in production
-		Secure:   false,
+		Secure:   app.InProduction,
 		SameSite: http.SameSiteLaxMode,
 	})
 	return csrfHandler
+}
+
+// SessionLoad loads and saves the session on every request
+func SessionLoad(next http.Handler) http.Handler {
+	return session.LoadAndSave(next)
 }
